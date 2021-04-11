@@ -1,0 +1,35 @@
+body {
+    max-width: 1000px;
+}
+
+h1 {
+    text-align: center;
+}
+
+.db-info {
+    display: flex;
+    justify-content: center;
+}
+
+.origin {
+    background-color: thistle;
+    border: solid 2px dodgerblue;
+    border-radius: 5px;
+    padding: 10px;
+}
+
+.results {
+    margin-left: 50px;
+    margin-top: 20px;
+}
+
+.citation {
+    margin-bottom: 20px;
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    font-size: 16px;
+    padding: 10px;
+    border: solid 2px dodgerblue;
+    border-radius: 5px;
+}

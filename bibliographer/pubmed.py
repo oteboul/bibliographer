@@ -21,6 +21,10 @@ from selenium.webdriver.support import expected_conditions as EC
 from bibliographer import citation
 
 
+def to_url(pmid: str):
+    return f'https://pubmed.ncbi.nlm.nih.gov/{pmid}/'
+
+
 class PubmedFetcher:
     """Fetches and parses PubMed HTML."""
 
@@ -42,14 +46,12 @@ class PubmedFetcher:
         try:
             button = self._browser.find_element_by_xpath(
                 '//*[@id="top-references-list"]/div/div/button')
+            button.click()
+            condition = EC.presence_of_element_located(
+                (By.XPATH, '//*[@id="top-references-list-1"]/li[6]/ol/li'))
+            WebDriverWait(self._browser, 10).until(condition)
         except selenium.common.exceptions.NoSuchElementException as e:
-            logging.error(f'{url} has no references. Skipping')
-            return None
-
-        button.click()
-        condition = EC.presence_of_element_located(
-            (By.XPATH, '//*[@id="top-references-list-1"]/li[6]/ol/li'))
-        WebDriverWait(self._browser, 10).until(condition)
+            logging.error(f'{url} has no references.')
         return self._browser.page_source
 
     def parse(self, html: str) -> citation.Citation:
@@ -58,14 +60,28 @@ class PubmedFetcher:
         result = citation.Citation()
 
         result.title = etree.xpath('//h1[@class="heading-title"]/text()')[0].strip()
-        result.authors = etree.xpath('//span[@class="authors-list-item"]/a/text()')
+        result.authors = etree.xpath('//div[@class="inline-authors"]//span[@class="authors-list-item"]/a/text()')
+        if not result.authors:
+            result.authors = etree.xpath('//div[@class="inline-authors"]//span[@class="authors-list-item "]/a/text()')
+
+        abstract = etree.xpath("//div[@class='abstract']/div/p")
+        if abstract:
+            result.abstract = abstract[0].text_content().strip()
+
         result.pmid = etree.xpath('//span[@class="identifier pubmed"]/strong/text()')[0].strip()
         pmcid = etree.xpath('//span[@class="identifier pmc"]/a')
         if pmcid:
             result.pmcid = pmcid[0].text.strip() if pmcid else ''
             result.pmc_url = pmcid[0].attrib['href']
         result.journal = etree.xpath('//*[@id="full-view-journal-trigger"]/text()')[0].strip()
-        result.year, result.volume = etree.xpath('//*[@class="article-source"]/span[@class="cit"]/text()')[0].split(';')
+        year_volume = etree.xpath(
+            '//*[@class="article-source"]/span[@class="cit"]/text()')[0].split(';')
+        if len(year_volume) > 1:
+            result.year, result.volume = year_volume
+        else:
+            parts = year_volume[0].split()
+            result.year = parts[0]
+            result.volume = ' '.join(parts[1:])
 
         cited_by_elems = etree.xpath('//*[@id="citedby-articles-list"]/li/div')
         for elem in cited_by_elems:

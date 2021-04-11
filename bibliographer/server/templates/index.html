@@ -1,0 +1,38 @@
+<html>
+    <head>
+        <title>Bibliographer</title>
+        {% if config['embed_css'] %}
+            <!-- Ensures a single file to be downloaded -->
+            <style>
+                {% include "../static/main.css" %}
+            </style>
+        {% else %}
+            <link rel="stylesheet" href="{{static_url('main.css')}}">
+        {% end %}
+    </head>
+
+    <body>
+        <h1>Bibliographer</h1>
+
+        <div class='db-info'>
+            <div class='num_papers'>{{total}} articles from {{config['db']}}</div>
+        </div>
+
+        <div class="results">
+
+            {% if origin %}
+            <div class="origin citation">
+                {% module CitationUI(origin, None, -1) %}
+            </div>
+            {% end %}
+
+        
+            {% for idx, (citation, count) in enumerate(articles) %}
+              <div class="citation">
+                  {% module CitationUI(citation, idx, count) %}
+              </div>
+            {% end %}
+        </div>
+
+    </body>
+</html>

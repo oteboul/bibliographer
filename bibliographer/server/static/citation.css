@@ -1,0 +1,30 @@
+.title {
+    font-size: 20px;
+    color: royalblue;
+}
+
+.translation {
+    font-style: italic;
+}
+
+.citation-data {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    margin: 8px 0px 8px 0px;
+}
+
+.citation-stats {
+    margin-bottom: 5px;
+    font-size: 18px;
+    color:darkslategray;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+.abstract {
+    font-size: 15px;
+    margin-bottom: 10px;
+    text-align: justify;
+}

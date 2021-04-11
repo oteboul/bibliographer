@@ -1,0 +1,32 @@
+<span class='title'>
+    {% if idx is not None %} {{idx+1}}. {% end %}
+    <a href="{{citation.pm_url}}">{{citation.title}}</a>
+    {% if citation.title_fr %}
+        <div class='translation'>
+            {{citation.title_fr}}
+        </div>
+    {% end %}
+</span>
+<div class='citation-data'>
+    <span class='authors'>{{format_authors(citation.authors)}}</span>
+    <div>
+        <span class='year'>{{citation.year}}</span>, in 
+        <span class='journal'>{{citation.journal}}</span>
+    </div>
+</div>
+{% if count %}
+    <div class='citation-stats'>
+        <span>{{count}} citations.</span>
+        <span>Distance: {{citation.depth - 1}}</span>
+    </div>
+{% end %}
+{% if citation.abstract %}
+    <span class='abstract'>
+        &#127468;&#127463;
+        {{citation.abstract}}
+    </span>
+    <span class='abstract translation'>
+        &#127467;&#127479;
+        {{citation.abstract_fr}}
+    </span>
+{% end %}

@@ -12,11 +12,14 @@ class Citation:
     pm_url: str = ""
     pmc_url: str = ""
     title: str = ""
+    abstract: str = ""
     authors: List[str] = ""
     year: str = ""
     journal: str = ""
     volume: str = ""
-    depth: int = 0
+    depth: int = -1
     affiliations: str = ""
     references: List['Citation'] = dataclasses.field(default_factory= lambda: [])
     cited_by: List['Citation'] = dataclasses.field(default_factory= lambda: [])
+    title_fr: str = ""
+    abstract_fr: str = ""

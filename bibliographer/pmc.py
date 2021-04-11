@@ -69,6 +69,15 @@ class PMCFetcher:
         result.authors = etree.xpath('//div[@class="contrib-group fm-author"]/a/text()')
         result.affiliations = etree.xpath('//div[@class="fm-affl"]/text()')
 
+        # For abstract finds the abstract h2 first.
+        h2s = etree.xpath('//h2')
+        for h2 in h2s:
+            texts = h2.xpath('text()')
+            if texts and texts[0] == 'Abstract':
+                abstract = h2.getparent().xpath('div/p')
+                if abstract:
+                    result.abstract = abstract[0].text_content()
+
         refs = etree.xpath('//li/span[@class="mixed-citation"]')
         for ref in refs:
             links = {x.text: x.attrib['href'] for x in ref.xpath('.//a')}

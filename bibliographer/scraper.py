@@ -20,14 +20,17 @@ class BiblioScraper:
     def __init__(self,
                  filename: str,
                  seeds: Optional[List[str]] = None,
-                 max_depth: int = 5):
+                 max_depth: int = 5,
+                 sync_every: int = 20):
         self.filename = filename
         self.db = shelve.open(filename)
         self.queue = queues.Queue()
         self.seeds = seeds
         self.max_depth = max_depth
-        self.parsers = [pubmed.PubmedFetcher(), pmc.PMCFetcher()]
+        self.parsers = [pubmed.PubmedFetcher()]
+        self.count = 0
         self.initialize_queue()
+        self.sync_every = sync_every
 
         self._stop_request = False
         signals = set([signal.SIGQUIT, signal.SIGINT, signal.SIGTERM])
@@ -38,17 +41,22 @@ class BiblioScraper:
         while not self.queue.empty() and not self._stop_request:
             depth, url = await self.queue.get()
             try:
-                await self.process(depth, url)
+                success = await self.process(depth, url)
+                self.count += int(success)
+                if self.count % self.sync_every == 0:
+                    logging.info(f'Syncing shelve ({self.count})')
+                    self.db.sync()
             except:
-                self.db.close()
-                raise
+                logging.error(f'Cannot process {url}')
+                self.db[url] = None
             finally:
                 self.queue.task_done()
             
-        logging.info("Saving to db.")     
-        self.db.close()
+        self.stop()
 
     def stop(self, *args):
+        logging.info("Saving to db.")     
+        self.db.close()
         for parser in self.parsers:
             parser.stop()
 
@@ -74,31 +82,38 @@ class BiblioScraper:
             return
 
         for url in self.db.keys():
+            self.count += 1
             self.add_citation_to_queue(self.db[url])
+        logging.info(f'Already {self.count} citation on shelve.')
 
-    async def process(self, depth, url):
+    async def process(self, depth, url) -> bool:
         """Processes a single element from the queue."""
         if depth > self.max_depth:
-            return
+            return False
         
         if url in self.db:
             cite = self.db[url]
             cite.depth = min(cite.depth, depth + 1)
             self.db[url] = cite
-            return
+            return False
 
         matches = [p.matches(url) for p in self.parsers]
         if not any(matches):
             logging.error(f'No parser found for {url}')
-            return
+            return False
 
         parser = self.parsers[matches.index(True)]                
-        html = await parser.fetch(url)
+        try:
+            html = await parser.fetch(url)
+        except:
+            logging.error(f'Could not fetch {url}')
+            html = None
         if html is None:
-            return
+            return False
 
         # TODO(oliviert): add a try catch here.
         cite = parser.parse(html)
         cite.depth = depth + 1
         self.db[url] = cite
         self.add_citation_to_queue(cite)    
+        return True
